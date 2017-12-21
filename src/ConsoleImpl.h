@@ -14,8 +14,10 @@ private:
   bool start() override {
     std::string cmd;
     std::string line;
-    out << "Starting console...\n";
-    std::string_view prompt = &in == &std::cin ? ">> " : "";
+    bool fromStdin = &in == &std::cin;
+    if (fromStdin)
+      out << "Starting console...\n";
+    std::string_view prompt = fromStdin ? ">> " : "";
     while (true) {
       out << prompt;
       if (!std::getline(in, line))
@@ -37,7 +39,6 @@ private:
         throw std::runtime_error("no such command: '"s + cmd + "'"s);
       }
     }
-    out << "Exiting console...\n";
     return false;
   }
 
