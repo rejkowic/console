@@ -1,5 +1,5 @@
-#include <reyco/Console.h>
 #include <optional>
+#include <reyco/Console.h>
 
 namespace reyco {
 
@@ -8,7 +8,7 @@ public:
   CmdHandler(const std::string_view &cmd, Console &console);
   virtual ~CmdHandler();
 
-  virtual std::optional<bool> handle() = 0;
+  virtual std::optional<bool> handle(std::istream &in) = 0;
 
 protected:
   std::string_view cmd;
@@ -24,8 +24,8 @@ auto Console::addCommand(const std::string_view &cmd, auto handler) {
       class InlineCmdHandler : public Console::CmdHandler {
       public:
         using CmdHandler::CmdHandler;
-        std::optional<bool> handle() override {
-          innerHandler(console.in, console.out);
+        std::optional<bool> handle(std::istream &in) override {
+          innerHandler(in, console.out);
           return {};
         }
       };
@@ -36,12 +36,11 @@ auto Console::addCommand(const std::string_view &cmd, auto handler) {
     class InlineCmdHandler : public Console::CmdHandler {
     public:
       using CmdHandler::CmdHandler;
-      std::optional<bool> handle() override {
-        return innerHandler(console.in, console.out);
+      std::optional<bool> handle(std::istream &in) override {
+        return innerHandler(in, console.out);
       }
     };
     return std::make_unique<InlineCmdHandler>(cmd, *this);
   }
 }
-
 }

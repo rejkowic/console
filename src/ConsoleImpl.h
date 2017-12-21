@@ -1,7 +1,8 @@
-#include <reyco/ConsoleCmdHandler.h>
-#include <unordered_map>
 #include <iostream>
 #include <optional>
+#include <reyco/ConsoleCmdHandler.h>
+#include <sstream>
+#include <unordered_map>
 
 namespace reyco {
 
@@ -11,15 +12,22 @@ public:
 
 private:
   bool start() override {
-    std::string cmd = "(started)";
+    std::string cmd;
+    std::string line;
+    out << "Starting console...\n";
+    std::string_view prompt = &in == &std::cin ? ">> " : "";
     while (true) {
-      out << '\n' << cmd << ">> ";
-      if (!(in >> cmd))
+      out << prompt;
+      if (!std::getline(in, line))
         return false;
+      if (line.empty())
+        continue;
 
+      std::istringstream ss(line);
+      ss >> cmd;
       try {
         CmdHandler &handler = cmdHandlers.at(cmd).get();
-        std::optional<bool> result = handler.handle();
+        std::optional<bool> result = handler.handle(ss);
 
         if (!result.has_value())
           continue;
@@ -29,15 +37,17 @@ private:
         throw std::runtime_error("no such command: '"s + cmd + "'"s);
       }
     }
+    out << "Exiting console...\n";
     return false;
   }
 
-  Console &registerCmd(const std::string_view &cmd, CmdHandler &handler) override {
-      cmdHandlers.emplace(cmd, std::ref(handler));
-      return *this;
+  Console &registerCmd(const std::string_view &cmd,
+                       CmdHandler &handler) override {
+    cmdHandlers.emplace(cmd, std::ref(handler));
+    return *this;
   }
   void unregisterCmd(const std::string_view &cmd) override {
-      cmdHandlers.erase(cmd);
+    cmdHandlers.erase(cmd);
   }
 
   using CmdHandlerRef = std::reference_wrapper<CmdHandler>;
